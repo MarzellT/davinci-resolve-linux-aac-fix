@@ -92,9 +92,13 @@ static const patch_t PATCHES[] = {
 /* exe guard — only patch the actual Resolve binary, NEVER /opt/resolve/bin/fuscript
  * or other helpers (corrupts scripting subprocesses (Resolve forks helper binaries that share the binary; corrupting them breaks the scripting API)). Match suffix exactly. */
 static int is_resolve(void) {
-    char exe[512];
+    char exe[PATH_MAX];
     ssize_t n = readlink("/proc/self/exe", exe, sizeof(exe) - 1);
     if (n <= 0) return 0;
+    /* truncation guard: readlink fills exactly sizeof(exe)-1 on truncation;
+     * we'd be matching against a possibly-truncated path → refuse rather than
+     * risk a false positive at the tail. */
+    if (n >= (ssize_t)(sizeof(exe) - 1)) return 0;
     exe[n] = 0;
     const char *want = "/opt/resolve/bin/resolve";
     size_t wl = 0; while (want[wl]) wl++;
@@ -188,7 +192,10 @@ static void marker(const char *msg) {
     if (!path || !*path) path = "/tmp/aac-hybrid.log";
     INIT_REAL(open);
     if (!real_open) return;
-    int fd = real_open(path, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0644);
+    /* O_NONBLOCK: if AAC_HYBRID_LOG points at a FIFO with no reader, a
+     * blocking open() would hang Resolve's import thread; we'd rather drop
+     * the log line than freeze the GUI. */
+    int fd = real_open(path, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC | O_NONBLOCK, 0644);
     if (fd < 0) return;
     /* prepend timestamp + pid for ordering across processes */
     char hdr[64];
@@ -725,6 +732,19 @@ static int spawn_transcode(const char *src, const char *sibling) {
          * sibling check). */
         unsetenv("LD_PRELOAD");
         unsetenv("LD_AUDIT");
+        /* Sanitize PATH so a malicious dir earlier on the user's PATH can't
+         * shadow `resolve-codec-patch`. Prepend ~/.local/bin (installer
+         * destination) ahead of the standard search dirs. */
+        const char *home = getenv("HOME");
+        char safepath[PATH_MAX + 64];
+        if (home && *home) {
+            snprintf(safepath, sizeof(safepath),
+                     "%s/.local/bin:/usr/local/bin:/usr/bin:/bin", home);
+        } else {
+            snprintf(safepath, sizeof(safepath),
+                     "/usr/local/bin:/usr/bin:/bin");
+        }
+        setenv("PATH", safepath, 1);
         if (cache_dir()) setenv("AAC_FIX_OUT_PATH", sibling, 1);
         int devnull = open("/dev/null", O_RDWR);
         if (devnull >= 0) {
@@ -733,8 +753,19 @@ static int spawn_transcode(const char *src, const char *sibling) {
             dup2(devnull, STDERR_FILENO);
             if (devnull > 2) close(devnull);
         }
-        execl("/usr/bin/env resolve-codec-patch-fallback",
-              "resolve-codec-patch", "fix-file", src, (char *)NULL);
+        /* Close inherited fds >= 3 (other than lockfd) so Resolve's DB
+         * handles, GPU driver fds, project-file fds don't leak into ffmpeg.
+         * Done AFTER the dup2's above so 0/1/2 are already /dev/null. */
+        long maxfd = sysconf(_SC_OPEN_MAX);
+        if (maxfd < 1024) maxfd = 1024;
+        if (maxfd > 65536) maxfd = 65536;
+        for (int fd2 = 3; fd2 < (int)maxfd; fd2++) {
+            if (fd2 != lockfd) close(fd2);
+        }
+        /* execlp does $PATH lookup; install.sh puts the helper in
+         * ~/.local/bin which is now first on the sanitized PATH above. */
+        execlp("resolve-codec-patch",
+               "resolve-codec-patch", "fix-file", src, (char *)NULL);
         _exit(127);
     }
 

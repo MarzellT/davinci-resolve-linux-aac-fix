@@ -31,7 +31,6 @@ REPO_RAW="https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/m
 LIB_DIR="$HOME/.local/lib"
 BIN_DIR="$HOME/.local/bin"
 APP_DIR="$HOME/.local/share/applications"
-ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
 SHIM_SO="$LIB_DIR/aac_hybrid_shim.so"
 LAUNCHER="$BIN_DIR/davinci-resolve-native"
 DESKTOP="$APP_DIR/davinci-resolve-native.desktop"
@@ -95,7 +94,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 curl -fsSL "$REPO_RAW/src/aac_hybrid_shim.c" > "$TMP/aac_hybrid_shim.c"
 [ -s "$TMP/aac_hybrid_shim.c" ] || die "Source download failed."
-gcc -shared -fPIC -O2 -Wall -o "$TMP/aac_hybrid_shim.so" "$TMP/aac_hybrid_shim.c"
+gcc -shared -fPIC -O2 -Wall -Wno-format-truncation -o "$TMP/aac_hybrid_shim.so" "$TMP/aac_hybrid_shim.c"
 ok "Built $(wc -c < "$TMP/aac_hybrid_shim.so" | tr -d ' ') byte shim"
 
 # ── 4. install ──
@@ -115,6 +114,11 @@ unset SESSION_MANAGER
 
 # Preserve any LD_PRELOAD the user already had set
 export LD_PRELOAD="$HOME/.local/lib/aac_hybrid_shim.so${LD_PRELOAD:+:$LD_PRELOAD}"
+
+# Where FLAC sibling files land for the rare AAC variants the cave can't decode
+# (compact-length-esds AAC, true HE-AAC SBR). Keeping siblings in the cache dir
+# means they don't clutter your project / source directories.
+export AAC_REDIRECT_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/resolve-aac"
 
 # Disable IBus/IME inside Resolve (common workaround for hotkey flakiness)
 export GTK_IM_MODULE=""
@@ -186,7 +190,9 @@ created next to your source.
 
 Your on-disk Resolve binary is unchanged. To uninstall:
 
-  rm -f $SHIM_SO $LAUNCHER $DESKTOP
+  curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/uninstall.sh | bash
+
+(or manually: rm -f $SHIM_SO $LAUNCHER $BIN_DIR/resolve-codec-patch $DESKTOP)
 
 Issues? https://github.com/geekzeino/resolve-linux-native-aac/issues
 EOF
