@@ -20,6 +20,30 @@ Resolve 15 (2018).
 
 ---
 
+## Quick install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/install.sh | bash
+```
+
+Prefer to read the script first?
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/install.sh -o install.sh
+less install.sh   # review it
+bash install.sh
+```
+
+The installer is fully scoped to your user account (`~/.local/lib`, `~/.local/bin`, `~/.local/share/applications`) — no root needed, your `/opt/resolve` binary is never modified. After it finishes you'll see a new app-menu entry: **DaVinci Resolve (Native AAC)** alongside the regular one. Click it instead of the default; everything else works the same.
+
+To uninstall:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/uninstall.sh | bash
+```
+
+---
+
 ## TL;DR
 
 | | Before this shim | With this shim |
