@@ -12,7 +12,7 @@
 # What this does (everything is reversible — see UNINSTALL section at the end):
 #   1. Checks you have a C compiler and DaVinci Resolve installed.
 #   2. Downloads the shim source from the repo and compiles it.
-#   3. Installs the .so to ~/.local/lib/aac_native_shim.so
+#   3. Installs the .so to ~/.local/lib/aac_hybrid_shim.so
 #   4. Creates a wrapper launcher at ~/.local/bin/davinci-resolve-native
 #   5. Adds an app-menu entry: "DaVinci Resolve (Native AAC)"
 #
@@ -32,7 +32,7 @@ LIB_DIR="$HOME/.local/lib"
 BIN_DIR="$HOME/.local/bin"
 APP_DIR="$HOME/.local/share/applications"
 ICON_DIR="$HOME/.local/share/icons/hicolor/256x256/apps"
-SHIM_SO="$LIB_DIR/aac_native_shim.so"
+SHIM_SO="$LIB_DIR/aac_hybrid_shim.so"
 LAUNCHER="$BIN_DIR/davinci-resolve-native"
 DESKTOP="$APP_DIR/davinci-resolve-native.desktop"
 
@@ -93,15 +93,15 @@ fi
 info "Fetching and building the shim…"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-curl -fsSL "$REPO_RAW/src/aac_native_shim.c" > "$TMP/aac_native_shim.c"
-[ -s "$TMP/aac_native_shim.c" ] || die "Source download failed."
-gcc -shared -fPIC -O2 -Wall -o "$TMP/aac_native_shim.so" "$TMP/aac_native_shim.c"
-ok "Built $(wc -c < "$TMP/aac_native_shim.so" | tr -d ' ') byte shim"
+curl -fsSL "$REPO_RAW/src/aac_hybrid_shim.c" > "$TMP/aac_hybrid_shim.c"
+[ -s "$TMP/aac_hybrid_shim.c" ] || die "Source download failed."
+gcc -shared -fPIC -O2 -Wall -o "$TMP/aac_hybrid_shim.so" "$TMP/aac_hybrid_shim.c"
+ok "Built $(wc -c < "$TMP/aac_hybrid_shim.so" | tr -d ' ') byte shim"
 
 # ── 4. install ──
 info "Installing…"
 mkdir -p "$LIB_DIR" "$BIN_DIR" "$APP_DIR"
-install -m755 "$TMP/aac_native_shim.so" "$SHIM_SO"
+install -m755 "$TMP/aac_hybrid_shim.so" "$SHIM_SO"
 ok "Installed $SHIM_SO"
 
 cat > "$LAUNCHER" <<'LAUNCHER_EOF'
@@ -114,7 +114,7 @@ cat > "$LAUNCHER" <<'LAUNCHER_EOF'
 unset SESSION_MANAGER
 
 # Preserve any LD_PRELOAD the user already had set
-export LD_PRELOAD="$HOME/.local/lib/aac_native_shim.so${LD_PRELOAD:+:$LD_PRELOAD}"
+export LD_PRELOAD="$HOME/.local/lib/aac_hybrid_shim.so${LD_PRELOAD:+:$LD_PRELOAD}"
 
 # Disable IBus/IME inside Resolve (common workaround for hotkey flakiness)
 export GTK_IM_MODULE=""
@@ -125,6 +125,18 @@ exec /opt/resolve/bin/resolve "$@"
 LAUNCHER_EOF
 chmod +x "$LAUNCHER"
 ok "Installed launcher $LAUNCHER"
+
+# also install the transcode-fallback helper (needed for the rare compact-esds / true-HE-AAC files)
+info "Installing transcode-fallback helper (ffmpeg-based)..."
+curl -fsSL "$REPO_RAW/tools/resolve-codec-patch" > "$BIN_DIR/resolve-codec-patch"
+chmod +x "$BIN_DIR/resolve-codec-patch"
+ok "Installed $BIN_DIR/resolve-codec-patch"
+
+if ! command -v ffmpeg >/dev/null 2>&1; then
+    warn "ffmpeg not found in PATH — the rare compact-esds / true-HE-AAC AAC variants will fail"
+    warn "to transcode. Install ffmpeg from your distro to enable the fall-through path."
+fi
+
 
 # Find an icon to reuse for the .desktop entry (BMD ships one; fall back gracefully)
 ICON_PATH="DaVinciResolve"

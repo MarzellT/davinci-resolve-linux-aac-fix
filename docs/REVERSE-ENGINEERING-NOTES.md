@@ -102,20 +102,28 @@ patch (W^X restored after each write).
    the gate site and the call site you `jmp` back to.
 6. Run the in-process smoke test, then the four-point acceptance contract.
 
-## Known edge cases
+## Known cave-path edge cases (handled in v0.2 by the sibling path)
 
-- **HE-AAC SBR** (true `objectType=5` ASC): the shim assumes the inner
+The cave patches in `src/aac_hybrid_shim.c` decode LC AAC + 4-byte-length
+esds natively. Two AAC variants don't fit those assumptions and the cave
+alone can't handle them safely:
+
+- **HE-AAC SBR** (true `audioObjectType=5` ASC): the cave assumes the inner
   AudioSpecificConfig is at offset `+0x1f` past the ES_Descriptor header
   (length-encoded as a 4-byte expandable length), which it is for every
-  AAC file we've inspected from real-world muxers (ffmpeg, x264, Apple).
-  HE-AAC SBR triggers a downstream crash path beyond the shim's reach.
+  AAC file from real-world consumer muxers (ffmpeg, x264, Apple, GoPro,
+  Canon). HE-AAC SBR triggers a downstream crash path beyond the cave's
+  reach.
 - **Compact-length-esds AAC** (1-byte MPEG-4 descriptor lengths instead
-  of 4-byte): the ASC moves to `+0x16` instead of `+0x1f`, the shim's
+  of 4-byte): the ASC moves to `+0x16` instead of `+0x1f`, the cave's
   `+0x1f` bump points past it, and even fixed-offset variants of the
   trampoline trigger a use-after-free in Resolve's peak-gen `std::map`
-  node allocator. This is a multi-site issue beyond what a single patch
-  can fix in this version.
+  node allocator.
 
-A hybrid form of the shim that detects these two cases at `open()` time
-and falls through to the FLAC-sibling transcode workaround is the
-natural next step.
+**In v0.2 these are handled by the shim's per-file dispatch:** at `open()`
+time the shim parses the file's `esds` box and, on either edge case
+(`audioObjectType != 2` OR compact-length descriptors), invokes
+`tools/resolve-codec-patch` to produce a FLAC-audio sibling in the cache
+directory (`${XDG_CACHE_HOME:-$HOME/.cache}/resolve-aac/`) and redirects
+Resolve's `open()` to that sibling. The cave only sees files it can
+safely decode; the rest go through ffmpeg, centralized in the cache.

@@ -9,8 +9,9 @@ LIB_DIR="$HOME/.local/lib"
 BIN_DIR="$HOME/.local/bin"
 APP_DIR="$HOME/.local/share/applications"
 
-for f in "$LIB_DIR/aac_native_shim.so" \
+for f in "$LIB_DIR/aac_hybrid_shim.so" \
          "$BIN_DIR/davinci-resolve-native" \
+         "$BIN_DIR/resolve-codec-patch" \
          "$APP_DIR/davinci-resolve-native.desktop"; do
     if [ -e "$f" ]; then
         rm -f "$f"
