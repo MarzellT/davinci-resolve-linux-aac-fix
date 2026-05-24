@@ -21,8 +21,8 @@ it builds and installs everything below for you.
 ## Build
 
 ```bash
-git clone https://github.com/geekzeino/resolve-linux-native-aac.git
-cd resolve-linux-native-aac
+git clone https://github.com/geekzeino/davinci-resolve-linux-aac-fix.git
+cd davinci-resolve-linux-aac-fix
 gcc -shared -fPIC -O2 -Wall -o aac_hybrid_shim.so src/aac_hybrid_shim.c
 ```
 

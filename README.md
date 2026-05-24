@@ -1,4 +1,4 @@
-# resolve-linux-native-aac
+# davinci-resolve-linux-aac-fix
 
 **Native AAC-in-MP4 decode for DaVinci Resolve on Linux**, delivered as a
 single LD_PRELOAD interoperability shim. The shim looks at each file
@@ -27,13 +27,13 @@ directories.
 ## Quick install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/geekzeino/davinci-resolve-linux-aac-fix/main/install.sh | bash
 ```
 
 Prefer to read the script first?
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/geekzeino/davinci-resolve-linux-aac-fix/main/install.sh -o install.sh
 less install.sh   # review it
 bash install.sh
 ```
@@ -47,7 +47,7 @@ Click it instead of the default; everything else works the same.
 To uninstall:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/uninstall.sh | bash
+curl -fsSL https://raw.githubusercontent.com/geekzeino/davinci-resolve-linux-aac-fix/main/uninstall.sh | bash
 ```
 
 ---

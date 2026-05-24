@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# resolve-linux-native-aac one-command installer.
+# davinci-resolve-linux-aac-fix one-command installer.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/geekzeino/davinci-resolve-linux-aac-fix/main/install.sh | bash
 #
 # Or, to inspect before running:
-#   curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/install.sh -o install.sh
+#   curl -fsSL https://raw.githubusercontent.com/geekzeino/davinci-resolve-linux-aac-fix/main/install.sh -o install.sh
 #   less install.sh
 #   bash install.sh
 #
@@ -27,7 +27,7 @@ ok()    { printf "${C_G}✓${C_0} %s\n"   "$*"; }
 warn()  { printf "${C_Y}!${C_0} %s\n"   "$*"; }
 die()   { printf "${C_R}✗${C_0} %s\n"   "$*" >&2; exit 1; }
 
-REPO_RAW="https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main"
+REPO_RAW="https://raw.githubusercontent.com/geekzeino/davinci-resolve-linux-aac-fix/main"
 LIB_DIR="$HOME/.local/lib"
 BIN_DIR="$HOME/.local/bin"
 APP_DIR="$HOME/.local/share/applications"
@@ -105,7 +105,7 @@ ok "Installed $SHIM_SO"
 
 cat > "$LAUNCHER" <<'LAUNCHER_EOF'
 #!/bin/bash
-# DaVinci Resolve with native AAC decode (resolve-linux-native-aac).
+# DaVinci Resolve with native AAC decode (davinci-resolve-linux-aac-fix).
 # This launcher LD_PRELOADs the shim, which patches Resolve in-memory at
 # startup. The on-disk binary at /opt/resolve/bin/resolve is NOT modified.
 
@@ -190,9 +190,9 @@ created next to your source.
 
 Your on-disk Resolve binary is unchanged. To uninstall:
 
-  curl -fsSL https://raw.githubusercontent.com/geekzeino/resolve-linux-native-aac/main/uninstall.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/geekzeino/davinci-resolve-linux-aac-fix/main/uninstall.sh | bash
 
 (or manually: rm -f $SHIM_SO $LAUNCHER $BIN_DIR/resolve-codec-patch $DESKTOP)
 
-Issues? https://github.com/geekzeino/resolve-linux-native-aac/issues
+Issues? https://github.com/geekzeino/davinci-resolve-linux-aac-fix/issues
 EOF

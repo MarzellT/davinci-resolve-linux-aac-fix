@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# resolve-linux-native-aac uninstaller.
+# davinci-resolve-linux-aac-fix uninstaller.
 # Reverses everything install.sh did. Nothing root-level was ever touched,
 # so this is just a few file removals.
 

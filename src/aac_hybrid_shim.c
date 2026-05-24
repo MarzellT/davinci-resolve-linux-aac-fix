@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0
- * Copyright 2026 the resolve-linux-native-aac contributors
+ * Copyright 2026 the davinci-resolve-linux-aac-fix contributors
  *
  * INTEROPERABILITY (17 U.S.C. §1201(f)). This file contains no code,
  * symbols, RTTI strings, headers, or extracted byte sequences from
