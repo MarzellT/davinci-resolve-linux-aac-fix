@@ -92,8 +92,29 @@ fi
 info "Fetching and building the shim…"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
-curl -fsSL "$REPO_RAW/src/aac_hybrid_shim.c" > "$TMP/aac_hybrid_shim.c"
-[ -s "$TMP/aac_hybrid_shim.c" ] || die "Source download failed."
+
+# Local-checkout fallback: if this install.sh is invoked from a git clone (not
+# piped from curl), use the local source files directly. This bypasses
+# raw.githubusercontent.com CDN issues (post-rename cache 404s, regional
+# CDN propagation lag, etc).
+SCRIPT_DIR=""
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+    SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+fi
+
+fetch_or_local() {
+    # $1 = repo-relative path (e.g. "src/aac_hybrid_shim.c")
+    # $2 = output path under $TMP
+    local repo_path="$1" out="$2"
+    if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/$repo_path" ]; then
+        cp "$SCRIPT_DIR/$repo_path" "$out"
+    else
+        curl -fsSL "$REPO_RAW/$repo_path" -o "$out" || die "Failed to fetch $repo_path from $REPO_RAW (HTTP error). If the github raw CDN is being slow, try the git-clone install path: see README."
+    fi
+    [ -s "$out" ] || die "$repo_path was empty after fetch / copy."
+}
+
+fetch_or_local "src/aac_hybrid_shim.c" "$TMP/aac_hybrid_shim.c"
 gcc -shared -fPIC -O2 -Wall -Wno-format-truncation -o "$TMP/aac_hybrid_shim.so" "$TMP/aac_hybrid_shim.c"
 ok "Built $(wc -c < "$TMP/aac_hybrid_shim.so" | tr -d ' ') byte shim"
 
@@ -132,7 +153,7 @@ ok "Installed launcher $LAUNCHER"
 
 # also install the transcode-fallback helper (needed for the rare compact-esds / true-HE-AAC files)
 info "Installing transcode-fallback helper (ffmpeg-based)..."
-curl -fsSL "$REPO_RAW/tools/resolve-codec-patch" > "$BIN_DIR/resolve-codec-patch"
+fetch_or_local "tools/resolve-codec-patch" "$BIN_DIR/resolve-codec-patch"
 chmod +x "$BIN_DIR/resolve-codec-patch"
 ok "Installed $BIN_DIR/resolve-codec-patch"
 

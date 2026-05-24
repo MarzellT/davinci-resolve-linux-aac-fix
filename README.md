@@ -38,6 +38,14 @@ less install.sh   # review it
 bash install.sh
 ```
 
+If the `raw.githubusercontent.com` CDN is being slow for you (occasionally
+happens for a few minutes after a GitHub repo rename), use the git-clone
+install path — same result, immune to raw-CDN delays:
+
+```bash
+git clone --depth 1 https://github.com/geekzeino/davinci-resolve-linux-aac-fix.git /tmp/davinci-resolve-linux-aac-fix && bash /tmp/davinci-resolve-linux-aac-fix/install.sh
+```
+
 The installer is fully scoped to your user account (`~/.local/lib`,
 `~/.local/bin`, `~/.local/share/applications`) — no root needed, your
 `/opt/resolve` binary is never modified. After it finishes you'll see a new
