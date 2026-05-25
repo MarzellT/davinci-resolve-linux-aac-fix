@@ -45,12 +45,19 @@ SRC=$(readlink -f -- "$SRC" 2>/dev/null || echo "$SRC")
 if [ -n "${AAC_FIX_OUT_PATH:-}" ]; then
     DEST="$AAC_FIX_OUT_PATH"
 else
-    # 8-hex of the source absolute-path sha256 → stable hash, human-readable cache listing
-    HASH=$(printf '%s' "$SRC" | sha256sum | cut -c1-8)
+    # 8-hex of source absolute-path DJB2 (matches aac_hybrid_shim.so::path_hash
+    # AND pre-backfill-aac _djb2 — single source of truth across the trio).
+    # Direct CLI calls used to default to sha256 here, which created orphan
+    # cache entries the shim couldn't find on import (caught 2026-05-26).
+    HASH=$(python3 -c "
+import sys
+h = 5381
+for c in sys.argv[1].encode():
+    h = ((h << 5) + h + c) & 0xFFFFFFFFFFFFFFFF
+print(f'{h & 0xFFFFFFFF:08x}')
+" "$SRC")
     BASE=$(basename -- "${SRC%.*}")
-    # strip filesystem-hostile characters from the basename
-    BASE_SAFE=$(echo "$BASE" | tr -c 'A-Za-z0-9_-' '_' | cut -c1-80)
-    DEST="$CACHE_DIR/${HASH}-${BASE_SAFE}.resolve.mp4"
+    DEST="$CACHE_DIR/${HASH}-${BASE}.resolve.mp4"
 fi
 
 case "$CMD" in
@@ -103,6 +110,23 @@ case "$CMD" in
             echo "ffmpeg transcode failed for $SRC" >&2
             exit 1
         fi
+        # Self-prune cache to AAC_CACHE_CAP_GB (default 50 GB) by oldest atime.
+        # Backgrounded + errors swallowed so import path is never affected.
+        (
+            set +e
+            cap_gb="${AAC_CACHE_CAP_GB:-50}"
+            cap_bytes=$((cap_gb * 1073741824))
+            total=$(du -sb "$CACHE_DIR" 2>/dev/null | cut -f1)
+            if [ -n "$total" ] && [ "$total" -gt "$cap_bytes" ]; then
+                find "$CACHE_DIR" -type f -name '*.resolve.mp4' -printf '%A@\t%s\t%p\n' 2>/dev/null \
+                  | sort -n \
+                  | while IFS=$'\t' read -r _ sz f; do
+                        [ "$total" -le "$cap_bytes" ] && break
+                        rm -f -- "$f" 2>/dev/null && total=$((total - sz))
+                    done
+            fi
+        ) >/dev/null 2>&1 &
+        disown 2>/dev/null || true
         ;;
     *)
         echo "unknown command: $CMD" >&2
