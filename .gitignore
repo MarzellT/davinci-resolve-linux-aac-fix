@@ -1,3 +1,7 @@
 *.so
 *.o
 *.a
+
+/native-package/
+/installed-binary-check.json
+__pycache__/

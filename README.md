@@ -1,5 +1,10 @@
 # davinci-resolve-linux-aac-fix
 
+> **Resolve Studio 21.1.0.17 Linux:** use the separate [native AAC port](NATIVE-21-PORT.md).
+> The legacy installer below targets 20.3.2 and does not install the 21.1 port.
+> The new port requires an exact executable match and an isolated AAC decoder.
+
+
 **Native AAC-in-MP4 decode for DaVinci Resolve on Linux**, delivered as a
 single LD_PRELOAD interoperability shim. The shim looks at each file
 Resolve opens, dispatches per file: LC AAC + 4-byte-length `esds` →

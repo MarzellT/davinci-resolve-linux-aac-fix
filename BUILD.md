@@ -1,5 +1,9 @@
 # Build, install, smoke-test, uninstall
 
+For **Resolve Studio 21.1.0.17**, follow [the native port build and installation instructions](NATIVE-21-PORT.md).
+The instructions below describe the original 20.3.2 hybrid shim.
+
+
 For most people, the one-line installer in the README is the right path —
 it builds and installs everything below for you.
 

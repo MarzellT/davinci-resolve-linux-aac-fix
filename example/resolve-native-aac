@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+resolve_exe=/opt/resolve/bin/resolve
+expected=99d4e0a46d63cbfe71ce4b30f23c5654ffbdd17d782d9368986cecd159e415d0
+package_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+fail() {
+  printf 'Resolve Native AAC: %s\n' "$*" >&2
+  if command -v notify-send >/dev/null 2>&1; then notify-send -u critical 'Resolve Native AAC' "$*" || true; fi
+  exit 1
+}
+actual=$(sha256sum -- "$resolve_exe")
+[[ ${actual%% *} == "$expected" ]] || fail 'This Resolve build is not supported. Use the normal Resolve launcher; the AAC port needs an update.'
+(cd -- "$package_dir" && sha256sum --check --status SHA256SUMS) || fail 'AAC package validation failed. Rebuild/reinstall this tested package.'
+if pgrep -u "$(id -u)" -f '^/opt/resolve/bin/resolve([[:space:]]|$)' >/dev/null; then
+  fail 'Resolve is already running. Close it normally before launching Native AAC.'
+fi
+export RESOLVE_AAC_DECODER_LIBRARY="$package_dir/libavcodec.so.60.3.100"
+export LD_PRELOAD="$package_dir/aac_native_21.so${LD_PRELOAD:+:$LD_PRELOAD}"
+exec "$resolve_exe" "$@"
