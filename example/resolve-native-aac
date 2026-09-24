@@ -5,7 +5,9 @@ expected=99d4e0a46d63cbfe71ce4b30f23c5654ffbdd17d782d9368986cecd159e415d0
 package_dir=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 fail() {
   printf 'Resolve Native AAC: %s\n' "$*" >&2
-  if command -v notify-send >/dev/null 2>&1; then notify-send -u critical 'Resolve Native AAC' "$*" || true; fi
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -u critical 'Resolve Native AAC' "$*" || true
+  fi
   exit 1
 }
 actual=$(sha256sum -- "$resolve_exe")

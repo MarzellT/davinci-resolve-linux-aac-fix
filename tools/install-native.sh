@@ -13,9 +13,19 @@ done
 chmod +x -- "$target/resolve-native-aac"
 # HOME may contain spaces; Desktop Entry Exec uses double-quoted arguments.
 python - "$target" "$HOME/.local/share/applications/resolve-native-aac.desktop" <<'PY'
-import pathlib,sys
-exe=str(pathlib.Path(sys.argv[1])/'resolve-native-aac')
-exe=exe.replace('\\','\\\\').replace('"','\\"').replace('`','\\`').replace('$','\\$')
-pathlib.Path(sys.argv[2]).write_text('[Desktop Entry]\nType=Application\nName=DaVinci Resolve (Native AAC)\nComment=Experimental native AAC support for verified Resolve Studio 21.1\nExec="'+exe+'" %U\nIcon=davinci-resolve\nTerminal=false\nCategories=AudioVideo;Video;\n')
+import pathlib, sys
+
+exe = str(pathlib.Path(sys.argv[1]) / "resolve-native-aac")
+exe = (
+    exe.replace("\\", "\\\\")
+    .replace('"', '\\"')
+    .replace("`", "\\`")
+    .replace("$", "\\$")
+)
+pathlib.Path(sys.argv[2]).write_text(
+    '[Desktop Entry]\nType=Application\nName=DaVinci Resolve (Native AAC)\nComment=Experimental native AAC support for verified Resolve Studio 21.1\nExec="'
+    + exe
+    + '" %U\nIcon=davinci-resolve\nTerminal=false\nCategories=AudioVideo;Video;\n'
+)
 PY
 printf 'Installed separate Native AAC launcher. Normal Resolve launcher unchanged.\n'

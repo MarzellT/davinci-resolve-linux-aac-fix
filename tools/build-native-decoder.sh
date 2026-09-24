@@ -10,7 +10,9 @@ if [[ ! -f "$archive" ]]; then
  mv -- "$archive.tmp" "$archive"
 fi
 printf '%s  %s\n' 57be87c22d9b49c112b6d24bc67d42508660e6b718b3db89c44e47e289137082 "$archive" | sha256sum --check -
-if [[ ! -d "$build_root/ffmpeg-6.0" ]]; then tar -xf "$archive" -C "$build_root"; fi
+if [[ ! -d "$build_root/ffmpeg-6.0" ]]; then
+  tar -xf "$archive" -C "$build_root"
+fi
 cd -- "$build_root/ffmpeg-6.0"
 ./configure --prefix="$build_root/decoder" --disable-everything --enable-decoder=aac \
  --enable-shared --disable-static --disable-programs --disable-doc --disable-avdevice \
